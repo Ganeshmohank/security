@@ -1,0 +1,111 @@
+secscan report
+generated: 2026-04-20 15:54:18
+
+files=5  ast=27  bandit=2  radon=1  llm=0  confirmed=2
+severity  critical=9  high=10  medium=10  low=1  info=0
+------------------------------------------------------------------------
+
+* test_code/app.py
+    [critical:1  high:2  medium:3]
+  [crit] ast    L8    SEC002     Hardcoded secret
+          Credential literal in source: SERVICE_TOKEN = 'flask-session-secret-abc12345'.
+          Move secrets to environment variables or a secrets manager.
+  [high] ast    L29   SEC001     Possible SQL injection
+          SQL query built via string concatenation. Use parameterised queries
+          (cursor.execute(sql, params)) instead of string composition.
+  [high] ast    L40   SEC003     Dangerous function call
+          eval() executes arbitrary code. Replace with a parser, a dispatch table, or
+          ast.literal_eval().
+  [med ] ast    L16   SEC004     Unvalidated input
+          request.args.get(...) is user-controlled. Apply schema validation (e.g.
+          pydantic, WTForms) before use.
+  [med ] ast    L23   SEC004     Unvalidated input
+          request.form.get(...) is user-controlled. Apply schema validation (e.g.
+          pydantic, WTForms) before use.
+  [med ] ast    L24   SEC004     Unvalidated input
+          request.form.get(...) is user-controlled. Apply schema validation (e.g.
+          pydantic, WTForms) before use.
+
+* test_code/config.py
+    [critical:5]
+  [crit] ast    L4    SEC002     Hardcoded secret
+          Credential literal in source: AWS_ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE'. Move
+          secrets to environment variables or a secrets manager.
+  [crit] ast    L5    SEC002     Hardcoded secret
+          Credential literal in source: AWS_SECRET_ACCESS_KEY =
+          'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'. Move secrets to environment
+          variables or a secrets manager.
+  [crit] ast    L6    SEC002     Hardcoded secret
+          Credential literal in source: JWT_SECRET = 'my-jwt-secret-key-98765'. Move
+          secrets to environment variables or a secrets manager.
+  [crit] ast    L7    SEC002     Hardcoded secret
+          Credential literal in source: ENCRYPTION_KEY = 'encryption-key-456789'. Move
+          secrets to environment variables or a secrets manager.
+  [crit] ast    L10   SEC002     Hardcoded secret
+          Credential literal in source: SECRET_KEY = 'flask-secret-key-12345'. Move
+          secrets to environment variables or a secrets manager.
+
+* test_code/database.py
+    [critical:1  high:3  medium:2]
+  [crit] ast    L8    SEC002     Hardcoded secret
+          Credential literal in source: DB_PASSWORD = 'password123'. Move secrets to
+          environment variables or a secrets manager.
+  [high] ast    L18   SEC001     Possible SQL injection
+          SQL query built via .format(). Use parameterised queries (cursor.execute(sql,
+          params)) instead of string composition.
+  [high] ast    L30   SEC001     Possible SQL injection
+          SQL query built via %-formatting. Use parameterised queries (cursor.execute(sql,
+          params)) instead of string composition.
+  [high] ast    L40   SEC001     Possible SQL injection
+          SQL query built via a tainted variable 'sql' (assigned from an f-string). Use
+          parameterised queries (cursor.execute(sql, params)) instead of string
+          composition.
+  [med ] ast    L46   SEC005     Weak cryptographic primitive
+          MD5 is cryptographically broken. Use hashlib.sha256() or argon2/bcrypt/scrypt
+          for passwords.
+  [med ] ast    L50   SEC005     Weak cryptographic primitive
+          SHA1 is cryptographically broken. Use hashlib.sha256() or argon2/bcrypt/scrypt
+          for passwords.
+
+* test_code/templates.py
+    [low:1]
+  [low ] radon  L27   CC-C       High cyclomatic complexity (16)
+          function 'route_template' has CC=16 (grade C). Consider splitting into smaller
+          helpers; reviewers have a harder time reasoning about security properties of
+          large branching functions.
+
+* test_code/utils.py
+    [critical:2  high:5  medium:5]
+  [crit] ast    L11   SEC002     Hardcoded secret
+          Credential literal in source: PROVIDER_API_KEY = 'sk-proj-abc123xyz7890'. Move
+          secrets to environment variables or a secrets manager.
+  [crit] ast    L35   SEC002     Hardcoded secret (entropy)
+          High-entropy literal assigned to 'alphabet': abcdefghijklmnopqrstuvwx... Looks
+          like a secret; move it out of version control.
+  [high] bandit L15   B602       Subprocess shell=True
+          subprocess call with shell=True identified, security issue.
+  [high] ast    L15   SEC003     Dangerous function call
+          subprocess.Popen(..., shell=True) enables shell expansion. Pass an argument list
+          and drop shell=True.
+  [high] ast    L21   SEC003     Dangerous function call
+          yaml.load() without SafeLoader is unsafe on untrusted input.
+  [high] ast    L25   SEC003     Dangerous function call
+          pickle.loads() is unsafe on untrusted input.
+  [high] ast    L47   SEC003     Dangerous function call
+          exec() executes arbitrary code. Replace with a parser, a dispatch table, or
+          ast.literal_eval().
+  [med ] bandit L21   B506       Unsafe yaml.load
+          Use of unsafe yaml load. Allows instantiation of arbitrary objects. Consider
+          yaml.safe_load().
+  [med ] ast    L29   SEC004     Unvalidated input
+          input() returns unvalidated user data. Validate and whitelist before use.
+  [med ] ast    L36   SEC006     Insecure PRNG in security context
+          random.choice(...) uses Python's predictable PRNG. In a file that handles
+          tokens/secrets/passwords use the `secrets` module (e.g.
+          secrets.token_urlsafe()).
+  [med ] ast    L40   SEC007     Insecure temporary file
+          tempfile.mktemp() is race-prone. Use tempfile.NamedTemporaryFile or mkstemp().
+  [med ] ast    L41   SEC007     Insecure temporary file
+          open('/tmp/secscan_cache.bin', write) writes to a world-writable directory with
+          a predictable name. Use tempfile.mkstemp().
+    -> cross-engine confirmed: 2

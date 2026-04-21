@@ -1,0 +1,166 @@
+# How to use this file
+
+Paste the entire block below into Gamma (gamma.app) → "Create new" →
+"Paste in text". Gamma will split each `---` into a new slide.
+Target runtime: 8 minutes. 8 slides @ ~1 min each.
+
+=============================================================
+
+# secscan
+## A Static Security Analyzer for Python
+
+CMPE-279 — Secure Software Engineering
+Team of 2: Teammate A, Teammate B
+Spring 2026
+
+---
+
+# Why this project
+
+**Problem.** Python code ships to production with the same class of bugs
+year after year: SQL injection, hardcoded credentials, unvalidated input,
+unsafe dynamic execution. A single-pass code review misses most of them.
+
+**Objective.** Build a command-line tool that scans Python source,
+combines multiple analysis engines, and produces a CI-friendly report
+that flags vulnerabilities before they are merged.
+
+**Why it matters.** The CMPE-279 brief names `ast`, `bandit`, and
+`radon` for a reason — each catches a different failure mode. A tool
+that fuses them gives the reviewer one place to look instead of three.
+
+---
+
+# What we built
+
+**secscan** — a Python package + CLI that runs **four independent
+engines** over a codebase and cross-validates their findings.
+
+Highlights:
+- **7 custom AST rules** including lightweight taint tracking for SQL
+  injection (`sql = f"..."; cur.execute(sql)`).
+- **Curated bandit subset** (B201, B506, B602, B701).
+- **Radon complexity engine** — flags hard-to-audit functions.
+- **Optional LLM engine** via OpenRouter for context-aware review.
+- **Cross-engine confirmation** — findings reported by ≥2 engines are
+  tagged "confirmed" for the reviewer.
+- **Three report formats** — text, JSON, and a zero-JS HTML dashboard
+  with collapsible file sections and source-code snippets.
+
+---
+
+# Architecture
+
+```
+    +--------+     +-----------------+     +----------------+
+    |  CLI   | --> |  core/scanner   | --> |  report/builder|
+    +--------+     +-----------------+     +----------------+
+                           |
+         +--------+--------+--------+--------+
+         |        |        |        |
+    +---------+ +--------+ +--------+ +--------+
+    |  rules  | | bandit | | radon  | |  llm   |
+    | (AST)   | | (proc) | | (lib)  | | (API)  |
+    +---------+ +--------+ +--------+ +--------+
+                    \     |    |    /
+                     v    v    v    v
+                 core/finding (shared dataclass)
+```
+
+- **`core/finding`** — single shared `@dataclass` every engine emits.
+- **`core/scanner`** — walks files, fans out to engines, dedupes.
+- **Engines** — each owns one analysis source; fully swappable.
+- **`report/builder`** — renders text / JSON / HTML from the same data.
+
+---
+
+# Detection catalogue
+
+| Rule   | Title                              | Severity   |
+|--------|------------------------------------|------------|
+| SEC001 | SQL injection (taint-lite)         | high       |
+| SEC002 | Hardcoded secret (AST + entropy)   | critical   |
+| SEC003 | Dangerous call (eval/exec/pickle)  | high       |
+| SEC004 | Unvalidated input                  | medium     |
+| SEC005 | Weak crypto (MD5/SHA1)             | medium     |
+| SEC006 | Insecure PRNG in security context  | medium     |
+| SEC007 | Insecure temp file                 | medium     |
+| B201/506/602/701 | bandit subset            | high/med   |
+| CC-C..F | Radon complexity hotspot          | low → crit |
+
+Notable: SEC001's taint-lite pass tracks variables assigned to unsafe
+strings inside a function, so the classic "build SQL then execute"
+pattern no longer slips through.
+
+---
+
+# Implementation details
+
+**Tech stack.** Python 3.11+, `ast` stdlib, `bandit`, `radon`,
+`requests` (OpenRouter), `pytest`.
+
+**Design decisions.**
+- **Rule-registry pattern** — each check is a `Rule` subclass appended
+  to a list. Adding a rule = one file edit.
+- **Shared `Finding` dataclass** — lets teammates work in parallel
+  without merge conflicts.
+- **AST-based secret detection** — replaced raw-text regex to kill
+  false positives inside f-string SQL queries.
+- **Native `<details>` HTML report** — zero JavaScript, single file,
+  safe to email.
+
+**Challenges we solved.**
+- Secret rule firing on `password = '{raw}'` inside f-strings → fixed
+  by walking `Assign`/`AnnAssign` nodes instead of scanning source text.
+- Cross-engine dedupe missing obvious duplicates → fixed by folding
+  `detail` text into the dedupe key.
+- Broken virtual environment from a prior user → rebuilt with `venv`.
+
+---
+
+# Results
+
+Scan of the bundled `test_code/` fixture tree (5 files):
+
+```
+files=5  ast=27  bandit=2  radon=1  llm=0  confirmed=2
+severity  critical=9  high=10  medium=10  low=1  info=0
+```
+
+- **9 critical** hardcoded-secret findings across the fixtures
+  (AWS keys, JWT secret, Flask session key).
+- **10 high** — SQL injection variants (concat, `%`, `.format()`,
+  f-string, taint-lite), `eval`, `pickle.loads`, `yaml.load`,
+  `subprocess(shell=True)`.
+- **10 medium** — unvalidated input, MD5/SHA1, insecure PRNG, `/tmp` writes.
+- **2 confirmed** — AST `SEC003` agrees with bandit `B602` on the
+  shell-injection sites in `utils.py`.
+- **Test suite: 58 passing in ~0.2 s** covering every rule, the radon
+  engine with grade thresholds, scanner orchestration, and all three
+  report renderers.
+
+*(show report.html live here — collapsible sections + source snippets)*
+
+---
+
+# Conclusion
+
+**What works.**
+- One command produces a clean, reviewer-friendly report that fuses
+  four analysis sources.
+- `--fail-on high` makes the tool drop-in ready for a CI pipeline.
+- Cross-engine confirmation concentrates reviewer attention on the
+  findings least likely to be false positives.
+
+**Impact.** A two-person team delivered a tool that materially extends
+the state of the art for a typical class project: taint-lite analysis,
+multi-engine fusion, and a polished HTML report — not just a wrapper
+around `bandit`.
+
+**Future work.**
+- GitHub Actions workflow + SARIF output for PR annotations.
+- Pre-commit hook.
+- Cross-function taint tracking.
+- Language support beyond Python (JS, Go).
+
+**Thank you — questions?**

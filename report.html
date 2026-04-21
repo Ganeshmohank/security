@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang='en'>
+<head>
+<meta charset='utf-8'>
+<title>secscan report</title>
+<style>
+:root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel2: #1d2129;
+    --panel3: #232936;
+    --ink: #e7ecf3;
+    --muted: #8a92a1;
+    --accent: #6ea8fe;
+    --crit: #ff5d5d;
+    --high: #ffa048;
+    --med:  #ffd166;
+    --low:  #7bd389;
+    --info: #8ab4f8;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 80px; }
+.hero h1 { margin: 0; font-size: 28px; letter-spacing: 0.2px; }
+.hero .sub { margin: 4px 0 24px; color: var(--muted); font-size: 13px; }
+.stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 14px; }
+.stat { background: var(--panel); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--panel3); }
+.stat .n { display: block; font-size: 24px; font-weight: 700; }
+.stat .l { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+.stat.confirmed { border-color: #3a5aa6; }
+.sevbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--panel3); border-radius: 10px; padding: 10px 14px; margin-bottom: 22px; }
+.sb-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; margin-right: 4px; }
+.sb { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.05); color: var(--muted); }
+.sb b { color: var(--ink); margin-right: 4px; }
+.sb-crit { background: rgba(255, 93, 93, 0.18); color: var(--crit); }
+.sb-high { background: rgba(255, 160, 72, 0.18); color: var(--high); }
+.sb-med  { background: rgba(255, 209, 102, 0.18); color: var(--med); }
+.sb-low  { background: rgba(123, 211, 137, 0.18); color: var(--low); }
+.sb-info { background: rgba(138, 180, 248, 0.18); color: var(--info); }
+
+details.file { background: var(--panel); border: 1px solid var(--panel3); border-radius: 12px; padding: 0; margin: 12px 0; overflow: hidden; }
+details.file.has-critical { border-color: rgba(255, 93, 93, 0.45); }
+details.file > summary { cursor: pointer; padding: 14px 18px; display: flex; align-items: center; gap: 12px; justify-content: space-between; list-style: none; }
+details.file > summary::-webkit-details-marker { display: none; }
+details.file > summary::before { content: '\25B8'; color: var(--muted); transition: transform 0.15s ease; }
+details.file[open] > summary::before { transform: rotate(90deg); display: inline-block; }
+.fname { color: var(--accent); font-family: ui-monospace, SFMono-Regular, monospace; font-size: 14px; word-break: break-all; flex: 1; }
+.fbadges { display: flex; gap: 6px; flex-shrink: 0; }
+.fb { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+.fb-crit { background: rgba(255, 93, 93, 0.18); color: var(--crit); }
+.fb-high { background: rgba(255, 160, 72, 0.18); color: var(--high); }
+.fb-med  { background: rgba(255, 209, 102, 0.18); color: var(--med); }
+.fb-low  { background: rgba(123, 211, 137, 0.18); color: var(--low); }
+.fb-info { background: rgba(138, 180, 248, 0.18); color: var(--info); }
+
+.findings { list-style: none; margin: 0; padding: 0 18px 14px; }
+.f { background: var(--panel2); border-left: 4px solid var(--muted); border-radius: 6px; padding: 10px 12px; margin: 8px 0; }
+.f .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12.5px; }
+.f .sev { font-weight: 700; font-size: 11px; letter-spacing: 0.6px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.05); }
+.f .rid, .f .eng, .f .ln { color: var(--muted); font-family: ui-monospace, monospace; }
+.f .ti { font-weight: 600; }
+.f .dt { margin: 6px 0 0; color: #cfd5df; font-size: 13px; }
+.f.sev-crit { border-left-color: var(--crit); }
+.f.sev-crit .sev { background: rgba(255, 93, 93, 0.15); color: var(--crit); }
+.f.sev-high { border-left-color: var(--high); }
+.f.sev-high .sev { background: rgba(255, 160, 72, 0.15); color: var(--high); }
+.f.sev-med { border-left-color: var(--med); }
+.f.sev-med .sev { background: rgba(255, 209, 102, 0.15); color: var(--med); }
+.f.sev-low { border-left-color: var(--low); }
+.f.sev-low .sev { background: rgba(123, 211, 137, 0.15); color: var(--low); }
+.f.sev-info { border-left-color: var(--info); }
+.f.sev-info .sev { background: rgba(138, 180, 248, 0.15); color: var(--info); }
+.snippet { background: #0c0f14; border: 1px solid var(--panel3); border-radius: 6px; margin: 10px 0 0; padding: 8px 0; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12.5px; overflow-x: auto; }
+.code-row { display: block; padding: 1px 12px; white-space: pre; }
+.code-row.focus { background: rgba(255, 160, 72, 0.12); border-left: 2px solid var(--high); padding-left: 10px; }
+.code-no { color: var(--muted); width: 3em; display: inline-block; text-align: right; margin-right: 12px; user-select: none; }
+.code-txt { color: var(--ink); }
+.empty { color: var(--muted); font-style: italic; padding: 0 18px 14px; }
+.confirmed { color: var(--accent); font-size: 12.5px; margin: 10px 18px 14px; }
+@media (max-width: 760px) {
+    .stats { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+<main class='wrap'>
+<header class='hero'>
+<h1>secscan report</h1>
+<p class='sub'>generated 2026-04-20 15:57:40</p>
+</header>
+<section class='stats'>
+<div class='stat'><span class='n'>5</span><span class='l'>files</span></div>
+<div class='stat'><span class='n'>27</span><span class='l'>ast</span></div>
+<div class='stat'><span class='n'>2</span><span class='l'>bandit</span></div>
+<div class='stat'><span class='n'>1</span><span class='l'>radon</span></div>
+<div class='stat'><span class='n'>0</span><span class='l'>llm</span></div>
+<div class='stat confirmed'><span class='n'>2</span><span class='l'>confirmed</span></div>
+</section>
+<section class='sevbar'>
+<span class='sb-label'>severity</span>
+<span class='sb sb-crit'><b>9</b> critical</span>
+<span class='sb sb-high'><b>10</b> high</span>
+<span class='sb sb-med'><b>10</b> medium</span>
+<span class='sb sb-low'><b>1</b> low</span>
+<span class='sb sb-info'><b>0</b> info</span>
+</section>
+<details open class='file has-critical'>
+<summary>
+<span class='fname'>test_code/app.py</span>
+<span class='fbadges'>
+<span class='fb fb-crit'>1 C</span>
+<span class='fb fb-high'>2 H</span>
+<span class='fb fb-med'>3 M</span>
+</span>
+</summary>
+<ul class='findings'>
+<li class='f sev-crit'><div class='row'><span class='sev'>CRITICAL</span><span class='rid'>SEC002</span><span class='eng'>ast</span><span class='ln'>L8</span><span class='ti'>Hardcoded secret</span></div><p class='dt'>Credential literal in source: SERVICE_TOKEN = &#x27;flask-session-secret-abc12345&#x27;. Move secrets to environment variables or a secrets manager.</p><pre class='snippet'><span class='code-row '><span class='code-no'>7</span><span class='code-txt'>&nbsp;</span></span><span class='code-row focus'><span class='code-no'>8</span><span class='code-txt'>SERVICE_TOKEN = &quot;flask-session-secret-abc12345&quot;</span></span><span class='code-row '><span class='code-no'>9</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>SEC001</span><span class='eng'>ast</span><span class='ln'>L29</span><span class='ti'>Possible SQL injection</span></div><p class='dt'>SQL query built via string concatenation. Use parameterised queries (cursor.execute(sql, params)) instead of string composition.</p><pre class='snippet'><span class='code-row '><span class='code-no'>28</span><span class='code-txt'>&nbsp;</span></span><span class='code-row focus'><span class='code-no'>29</span><span class='code-txt'>    cur.execute(</span></span><span class='code-row '><span class='code-no'>30</span><span class='code-txt'>        &quot;SELECT * FROM users WHERE username = &#x27;&quot;</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>SEC003</span><span class='eng'>ast</span><span class='ln'>L40</span><span class='ti'>Dangerous function call</span></div><p class='dt'>eval() executes arbitrary code. Replace with a parser, a dispatch table, or ast.literal_eval().</p><pre class='snippet'><span class='code-row '><span class='code-no'>39</span><span class='code-txt'>def _query(term):</span></span><span class='code-row focus'><span class='code-no'>40</span><span class='code-txt'>    return eval(f&quot;search_database(&#x27;{term}&#x27;)&quot;)</span></span><span class='code-row '><span class='code-no'>41</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>SEC004</span><span class='eng'>ast</span><span class='ln'>L16</span><span class='ti'>Unvalidated input</span></div><p class='dt'>request.args.get(...) is user-controlled. Apply schema validation (e.g. pydantic, WTForms) before use.</p><pre class='snippet'><span class='code-row '><span class='code-no'>15</span><span class='code-txt'>def handle_search():</span></span><span class='code-row focus'><span class='code-no'>16</span><span class='code-txt'>    needle = request.args.get(&quot;q&quot;)</span></span><span class='code-row '><span class='code-no'>17</span><span class='code-txt'>    hits = _query(needle)</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>SEC004</span><span class='eng'>ast</span><span class='ln'>L23</span><span class='ti'>Unvalidated input</span></div><p class='dt'>request.form.get(...) is user-controlled. Apply schema validation (e.g. pydantic, WTForms) before use.</p><pre class='snippet'><span class='code-row '><span class='code-no'>22</span><span class='code-txt'>def handle_login():</span></span><span class='code-row focus'><span class='code-no'>23</span><span class='code-txt'>    user_name = request.form.get(&quot;username&quot;)</span></span><span class='code-row '><span class='code-no'>24</span><span class='code-txt'>    raw_pwd = request.form.get(&quot;password&quot;)</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>SEC004</span><span class='eng'>ast</span><span class='ln'>L24</span><span class='ti'>Unvalidated input</span></div><p class='dt'>request.form.get(...) is user-controlled. Apply schema validation (e.g. pydantic, WTForms) before use.</p><pre class='snippet'><span class='code-row '><span class='code-no'>23</span><span class='code-txt'>    user_name = request.form.get(&quot;username&quot;)</span></span><span class='code-row focus'><span class='code-no'>24</span><span class='code-txt'>    raw_pwd = request.form.get(&quot;password&quot;)</span></span><span class='code-row '><span class='code-no'>25</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+</ul>
+</details>
+<details open class='file has-critical'>
+<summary>
+<span class='fname'>test_code/config.py</span>
+<span class='fbadges'>
+<span class='fb fb-crit'>5 C</span>
+</span>
+</summary>
+<ul class='findings'>
+<li class='f sev-crit'><div class='row'><span class='sev'>CRITICAL</span><span class='rid'>SEC002</span><span class='eng'>ast</span><span class='ln'>L4</span><span class='ti'>Hardcoded secret</span></div><p class='dt'>Credential literal in source: AWS_ACCESS_KEY_ID = &#x27;AKIAIOSFODNN7EXAMPLE&#x27;. Move secrets to environment variables or a secrets manager.</p><pre class='snippet'><span class='code-row '><span class='code-no'>3</span><span class='code-txt'>DATABASE_URL = &quot;postgresql://admin:secretpass123@localhost:5432/mydb&quot;</span></span><span class='code-row focus'><span class='code-no'>4</span><span class='code-txt'>AWS_ACCESS_KEY_ID = &quot;AKIAIOSFODNN7EXAMPLE&quot;</span></span><span class='code-row '><span class='code-no'>5</span><span class='code-txt'>AWS_SECRET_ACCESS_KEY = &quot;wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY&quot;</span></span></pre></li>
+<li class='f sev-crit'><div class='row'><span class='sev'>CRITICAL</span><span class='rid'>SEC002</span><span class='eng'>ast</span><span class='ln'>L5</span><span class='ti'>Hardcoded secret</span></div><p class='dt'>Credential literal in source: AWS_SECRET_ACCESS_KEY = &#x27;wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY&#x27;. Move secrets to environment variables or a secrets manager.</p><pre class='snippet'><span class='code-row '><span class='code-no'>4</span><span class='code-txt'>AWS_ACCESS_KEY_ID = &quot;AKIAIOSFODNN7EXAMPLE&quot;</span></span><span class='code-row focus'><span class='code-no'>5</span><span class='code-txt'>AWS_SECRET_ACCESS_KEY = &quot;wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY&quot;</span></span><span class='code-row '><span class='code-no'>6</span><span class='code-txt'>JWT_SECRET = &quot;my-jwt-secret-key-98765&quot;</span></span></pre></li>
+<li class='f sev-crit'><div class='row'><span class='sev'>CRITICAL</span><span class='rid'>SEC002</span><span class='eng'>ast</span><span class='ln'>L6</span><span class='ti'>Hardcoded secret</span></div><p class='dt'>Credential literal in source: JWT_SECRET = &#x27;my-jwt-secret-key-98765&#x27;. Move secrets to environment variables or a secrets manager.</p><pre class='snippet'><span class='code-row '><span class='code-no'>5</span><span class='code-txt'>AWS_SECRET_ACCESS_KEY = &quot;wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY&quot;</span></span><span class='code-row focus'><span class='code-no'>6</span><span class='code-txt'>JWT_SECRET = &quot;my-jwt-secret-key-98765&quot;</span></span><span class='code-row '><span class='code-no'>7</span><span class='code-txt'>ENCRYPTION_KEY = &quot;encryption-key-456789&quot;</span></span></pre></li>
+<li class='f sev-crit'><div class='row'><span class='sev'>CRITICAL</span><span class='rid'>SEC002</span><span class='eng'>ast</span><span class='ln'>L7</span><span class='ti'>Hardcoded secret</span></div><p class='dt'>Credential literal in source: ENCRYPTION_KEY = &#x27;encryption-key-456789&#x27;. Move secrets to environment variables or a secrets manager.</p><pre class='snippet'><span class='code-row '><span class='code-no'>6</span><span class='code-txt'>JWT_SECRET = &quot;my-jwt-secret-key-98765&quot;</span></span><span class='code-row focus'><span class='code-no'>7</span><span class='code-txt'>ENCRYPTION_KEY = &quot;encryption-key-456789&quot;</span></span><span class='code-row '><span class='code-no'>8</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-crit'><div class='row'><span class='sev'>CRITICAL</span><span class='rid'>SEC002</span><span class='eng'>ast</span><span class='ln'>L10</span><span class='ti'>Hardcoded secret</span></div><p class='dt'>Credential literal in source: SECRET_KEY = &#x27;flask-secret-key-12345&#x27;. Move secrets to environment variables or a secrets manager.</p><pre class='snippet'><span class='code-row '><span class='code-no'>9</span><span class='code-txt'>DEBUG = True</span></span><span class='code-row focus'><span class='code-no'>10</span><span class='code-txt'>SECRET_KEY = &quot;flask-secret-key-12345&quot;</span></span></pre></li>
+</ul>
+</details>
+<details open class='file has-critical'>
+<summary>
+<span class='fname'>test_code/database.py</span>
+<span class='fbadges'>
+<span class='fb fb-crit'>1 C</span>
+<span class='fb fb-high'>3 H</span>
+<span class='fb fb-med'>2 M</span>
+</span>
+</summary>
+<ul class='findings'>
+<li class='f sev-crit'><div class='row'><span class='sev'>CRITICAL</span><span class='rid'>SEC002</span><span class='eng'>ast</span><span class='ln'>L8</span><span class='ti'>Hardcoded secret</span></div><p class='dt'>Credential literal in source: DB_PASSWORD = &#x27;password123&#x27;. Move secrets to environment variables or a secrets manager.</p><pre class='snippet'><span class='code-row '><span class='code-no'>7</span><span class='code-txt'>DB_USER = &quot;admin&quot;</span></span><span class='code-row focus'><span class='code-no'>8</span><span class='code-txt'>DB_PASSWORD = &quot;password123&quot;</span></span><span class='code-row '><span class='code-no'>9</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>SEC001</span><span class='eng'>ast</span><span class='ln'>L18</span><span class='ti'>Possible SQL injection</span></div><p class='dt'>SQL query built via .format(). Use parameterised queries (cursor.execute(sql, params)) instead of string composition.</p><pre class='snippet'><span class='code-row '><span class='code-no'>17</span><span class='code-txt'>    cur = conn.cursor()</span></span><span class='code-row focus'><span class='code-no'>18</span><span class='code-txt'>    cur.execute(</span></span><span class='code-row '><span class='code-no'>19</span><span class='code-txt'>        &quot;INSERT INTO users (username, password) VALUES (&#x27;{}&#x27;, &#x27;{}&#x27;)&quot;.format(</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>SEC001</span><span class='eng'>ast</span><span class='ln'>L30</span><span class='ti'>Possible SQL injection</span></div><p class='dt'>SQL query built via %-formatting. Use parameterised queries (cursor.execute(sql, params)) instead of string composition.</p><pre class='snippet'><span class='code-row '><span class='code-no'>29</span><span class='code-txt'>    cur = conn.cursor()</span></span><span class='code-row focus'><span class='code-no'>30</span><span class='code-txt'>    cur.execute(&quot;SELECT * FROM users WHERE id = %s&quot; % account_id)</span></span><span class='code-row '><span class='code-no'>31</span><span class='code-txt'>    row = cur.fetchone()</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>SEC001</span><span class='eng'>ast</span><span class='ln'>L40</span><span class='ti'>Possible SQL injection</span></div><p class='dt'>SQL query built via a tainted variable &#x27;sql&#x27; (assigned from an f-string). Use parameterised queries (cursor.execute(sql, params)) instead of string composition.</p><pre class='snippet'><span class='code-row '><span class='code-no'>39</span><span class='code-txt'>    sql = f&quot;DELETE FROM users WHERE username = &#x27;{user_name}&#x27;&quot;</span></span><span class='code-row focus'><span class='code-no'>40</span><span class='code-txt'>    cur.execute(sql)</span></span><span class='code-row '><span class='code-no'>41</span><span class='code-txt'>    conn.commit()</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>SEC005</span><span class='eng'>ast</span><span class='ln'>L46</span><span class='ti'>Weak cryptographic primitive</span></div><p class='dt'>MD5 is cryptographically broken. Use hashlib.sha256() or argon2/bcrypt/scrypt for passwords.</p><pre class='snippet'><span class='code-row '><span class='code-no'>45</span><span class='code-txt'>def digest(raw):</span></span><span class='code-row focus'><span class='code-no'>46</span><span class='code-txt'>    return hashlib.md5(raw.encode()).hexdigest()</span></span><span class='code-row '><span class='code-no'>47</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>SEC005</span><span class='eng'>ast</span><span class='ln'>L50</span><span class='ti'>Weak cryptographic primitive</span></div><p class='dt'>SHA1 is cryptographically broken. Use hashlib.sha256() or argon2/bcrypt/scrypt for passwords.</p><pre class='snippet'><span class='code-row '><span class='code-no'>49</span><span class='code-txt'>def verify(raw, digest_value):</span></span><span class='code-row focus'><span class='code-no'>50</span><span class='code-txt'>    return hashlib.sha1(raw.encode()).hexdigest() == digest_value</span></span></pre></li>
+</ul>
+</details>
+<details open class='file'>
+<summary>
+<span class='fname'>test_code/templates.py</span>
+<span class='fbadges'>
+<span class='fb fb-low'>1 L</span>
+</span>
+</summary>
+<ul class='findings'>
+<li class='f sev-low'><div class='row'><span class='sev'>LOW</span><span class='rid'>CC-C</span><span class='eng'>radon</span><span class='ln'>L27</span><span class='ti'>High cyclomatic complexity (16)</span></div><p class='dt'>function &#x27;route_template&#x27; has CC=16 (grade C). Consider splitting into smaller helpers; reviewers have a harder time reasoning about security properties of large branching functions.</p><pre class='snippet'><span class='code-row '><span class='code-no'>26</span><span class='code-txt'>&nbsp;</span></span><span class='code-row focus'><span class='code-no'>27</span><span class='code-txt'>def route_template(kind, user, extra, flags, role):</span></span><span class='code-row '><span class='code-no'>28</span><span class='code-txt'>    # Deliberately branchy to exercise the radon engine in the demo report.</span></span></pre></li>
+</ul>
+</details>
+<details open class='file has-critical'>
+<summary>
+<span class='fname'>test_code/utils.py</span>
+<span class='fbadges'>
+<span class='fb fb-crit'>2 C</span>
+<span class='fb fb-high'>5 H</span>
+<span class='fb fb-med'>5 M</span>
+</span>
+</summary>
+<ul class='findings'>
+<li class='f sev-crit'><div class='row'><span class='sev'>CRITICAL</span><span class='rid'>SEC002</span><span class='eng'>ast</span><span class='ln'>L11</span><span class='ti'>Hardcoded secret</span></div><p class='dt'>Credential literal in source: PROVIDER_API_KEY = &#x27;sk-proj-abc123xyz7890&#x27;. Move secrets to environment variables or a secrets manager.</p><pre class='snippet'><span class='code-row '><span class='code-no'>10</span><span class='code-txt'>&nbsp;</span></span><span class='code-row focus'><span class='code-no'>11</span><span class='code-txt'>PROVIDER_API_KEY = &quot;sk-proj-abc123xyz7890&quot;</span></span><span class='code-row '><span class='code-no'>12</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-crit'><div class='row'><span class='sev'>CRITICAL</span><span class='rid'>SEC002</span><span class='eng'>ast</span><span class='ln'>L35</span><span class='ti'>Hardcoded secret (entropy)</span></div><p class='dt'>High-entropy literal assigned to &#x27;alphabet&#x27;: abcdefghijklmnopqrstuvwx... Looks like a secret; move it out of version control.</p><pre class='snippet'><span class='code-row '><span class='code-no'>34</span><span class='code-txt'>    # Insecure PRNG for a security-sensitive token.</span></span><span class='code-row focus'><span class='code-no'>35</span><span class='code-txt'>    alphabet = &quot;abcdefghijklmnopqrstuvwxyz0123456789&quot;</span></span><span class='code-row '><span class='code-no'>36</span><span class='code-txt'>    return &quot;&quot;.join(random.choice(alphabet) for _ in range(16))</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>B602</span><span class='eng'>bandit</span><span class='ln'>L15</span><span class='ti'>Subprocess shell=True</span></div><p class='dt'>subprocess call with shell=True identified, security issue.</p><pre class='snippet'><span class='code-row '><span class='code-no'>14</span><span class='code-txt'>def launch_echo(payload):</span></span><span class='code-row focus'><span class='code-no'>15</span><span class='code-txt'>    subprocess.Popen(f&quot;/bin/echo {payload}&quot;, shell=True)</span></span><span class='code-row '><span class='code-no'>16</span><span class='code-txt'>    return &quot;ok&quot;</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>SEC003</span><span class='eng'>ast</span><span class='ln'>L15</span><span class='ti'>Dangerous function call</span></div><p class='dt'>subprocess.Popen(..., shell=True) enables shell expansion. Pass an argument list and drop shell=True.</p><pre class='snippet'><span class='code-row '><span class='code-no'>14</span><span class='code-txt'>def launch_echo(payload):</span></span><span class='code-row focus'><span class='code-no'>15</span><span class='code-txt'>    subprocess.Popen(f&quot;/bin/echo {payload}&quot;, shell=True)</span></span><span class='code-row '><span class='code-no'>16</span><span class='code-txt'>    return &quot;ok&quot;</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>SEC003</span><span class='eng'>ast</span><span class='ln'>L21</span><span class='ti'>Dangerous function call</span></div><p class='dt'>yaml.load() without SafeLoader is unsafe on untrusted input.</p><pre class='snippet'><span class='code-row '><span class='code-no'>20</span><span class='code-txt'>    with open(cfg_path, &quot;r&quot;) as fh:</span></span><span class='code-row focus'><span class='code-no'>21</span><span class='code-txt'>        return yaml.load(fh)</span></span><span class='code-row '><span class='code-no'>22</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>SEC003</span><span class='eng'>ast</span><span class='ln'>L25</span><span class='ti'>Dangerous function call</span></div><p class='dt'>pickle.loads() is unsafe on untrusted input.</p><pre class='snippet'><span class='code-row '><span class='code-no'>24</span><span class='code-txt'>def revive(blob):</span></span><span class='code-row focus'><span class='code-no'>25</span><span class='code-txt'>    return pickle.loads(blob)</span></span><span class='code-row '><span class='code-no'>26</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-high'><div class='row'><span class='sev'>HIGH</span><span class='rid'>SEC003</span><span class='eng'>ast</span><span class='ln'>L47</span><span class='ti'>Dangerous function call</span></div><p class='dt'>exec() executes arbitrary code. Replace with a parser, a dispatch table, or ast.literal_eval().</p><pre class='snippet'><span class='code-row '><span class='code-no'>46</span><span class='code-txt'>def _dispatch(expr):</span></span><span class='code-row focus'><span class='code-no'>47</span><span class='code-txt'>    exec(f&quot;result = {expr}&quot;)</span></span><span class='code-row '><span class='code-no'>48</span><span class='code-txt'>    return result  # noqa: F821 - deliberately broken</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>B506</span><span class='eng'>bandit</span><span class='ln'>L21</span><span class='ti'>Unsafe yaml.load</span></div><p class='dt'>Use of unsafe yaml load. Allows instantiation of arbitrary objects. Consider yaml.safe_load().</p><pre class='snippet'><span class='code-row '><span class='code-no'>20</span><span class='code-txt'>    with open(cfg_path, &quot;r&quot;) as fh:</span></span><span class='code-row focus'><span class='code-no'>21</span><span class='code-txt'>        return yaml.load(fh)</span></span><span class='code-row '><span class='code-no'>22</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>SEC004</span><span class='eng'>ast</span><span class='ln'>L29</span><span class='ti'>Unvalidated input</span></div><p class='dt'>input() returns unvalidated user data. Validate and whitelist before use.</p><pre class='snippet'><span class='code-row '><span class='code-no'>28</span><span class='code-txt'>def read_user():</span></span><span class='code-row focus'><span class='code-no'>29</span><span class='code-txt'>    raw = input(&quot;Enter your data: &quot;)</span></span><span class='code-row '><span class='code-no'>30</span><span class='code-txt'>    return _dispatch(raw)</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>SEC006</span><span class='eng'>ast</span><span class='ln'>L36</span><span class='ti'>Insecure PRNG in security context</span></div><p class='dt'>random.choice(...) uses Python&#x27;s predictable PRNG. In a file that handles tokens/secrets/passwords use the `secrets` module (e.g. secrets.token_urlsafe()).</p><pre class='snippet'><span class='code-row '><span class='code-no'>35</span><span class='code-txt'>    alphabet = &quot;abcdefghijklmnopqrstuvwxyz0123456789&quot;</span></span><span class='code-row focus'><span class='code-no'>36</span><span class='code-txt'>    return &quot;&quot;.join(random.choice(alphabet) for _ in range(16))</span></span><span class='code-row '><span class='code-no'>37</span><span class='code-txt'>&nbsp;</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>SEC007</span><span class='eng'>ast</span><span class='ln'>L40</span><span class='ti'>Insecure temporary file</span></div><p class='dt'>tempfile.mktemp() is race-prone. Use tempfile.NamedTemporaryFile or mkstemp().</p><pre class='snippet'><span class='code-row '><span class='code-no'>39</span><span class='code-txt'>def cache_upload(buf):</span></span><span class='code-row focus'><span class='code-no'>40</span><span class='code-txt'>    path = tempfile.mktemp()</span></span><span class='code-row '><span class='code-no'>41</span><span class='code-txt'>    with open(&quot;/tmp/secscan_cache.bin&quot;, &quot;w&quot;) as fh:</span></span></pre></li>
+<li class='f sev-med'><div class='row'><span class='sev'>MEDIUM</span><span class='rid'>SEC007</span><span class='eng'>ast</span><span class='ln'>L41</span><span class='ti'>Insecure temporary file</span></div><p class='dt'>open(&#x27;/tmp/secscan_cache.bin&#x27;, write) writes to a world-writable directory with a predictable name. Use tempfile.mkstemp().</p><pre class='snippet'><span class='code-row '><span class='code-no'>40</span><span class='code-txt'>    path = tempfile.mktemp()</span></span><span class='code-row focus'><span class='code-no'>41</span><span class='code-txt'>    with open(&quot;/tmp/secscan_cache.bin&quot;, &quot;w&quot;) as fh:</span></span><span class='code-row '><span class='code-no'>42</span><span class='code-txt'>        fh.write(buf)</span></span></pre></li>
+</ul>
+<p class='confirmed'>2 cross-engine confirmed finding(s)</p>
+</details>
+</main></body></html>

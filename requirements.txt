@@ -1,0 +1,5 @@
+bandit>=1.7.5
+radon>=6.0.0
+requests>=2.31.0
+pytest>=7.4.0
+pytest-cov>=4.1.0
