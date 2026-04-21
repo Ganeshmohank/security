@@ -33,11 +33,18 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-If you intend to run the LLM engine:
+If you intend to run the LLM engine, copy `.env.example` to `.env` and
+paste your API key:
 
 ```bash
-export OPENROUTER_API_KEY="sk-or-..."
+cp .env.example .env
+# then edit .env and replace `your_api_llm_key` with your real key
 ```
+
+The tool auto-loads `.env` at startup. OpenAI is preferred (`OPENAI_API_KEY`);
+`OPENROUTER_API_KEY` is used as a fallback. You can also pass the key
+inline with `--api-key sk-...` or pick a provider explicitly with
+`--provider openai|openrouter`.
 
 ## Usage
 
@@ -58,8 +65,10 @@ Flags:
 | `--no-bandit`            | Skip the bandit engine                                        |
 | `--no-radon`             | Skip the radon complexity engine                              |
 | `--radon-min-grade G`    | Lowest radon grade that produces a finding (A-F, default `C`) |
-| `--llm`                  | Enable LLM review (needs `OPENROUTER_API_KEY`)                |
-| `--model MODEL`          | OpenRouter model id (default `deepseek/deepseek-chat`)        |
+| `--llm`                  | Enable LLM review (needs an API key in env/.env)              |
+| `--provider P`           | `auto`, `openai`, or `openrouter` (default: `auto`)           |
+| `--api-key KEY`          | Override the LLM API key for this run                         |
+| `--model MODEL`          | Model id (default `gpt-4o-mini` for OpenAI)                   |
 | `-o, --output PATH`      | Write report to a file instead of stdout                      |
 | `-f, --format FMT`       | `text`, `json`, or `html` (default `text`)                    |
 | `--min-severity LVL`     | Hide findings below LVL (`low`, `medium`, `high`, `critical`) |

@@ -64,7 +64,8 @@ class CodeScanner:
         *,
         use_llm: bool = False,
         llm_api_key: Optional[str] = None,
-        llm_model: str = "deepseek/deepseek-chat",
+        llm_model: Optional[str] = None,
+        llm_provider: str = "auto",
         use_bandit: bool = True,
         use_radon: bool = True,
         radon_min_grade: str = "C",
@@ -73,7 +74,11 @@ class CodeScanner:
         self.use_bandit = use_bandit
         self.use_radon = use_radon
         self.bandit = BanditRunner() if use_bandit else None
-        self.llm = LlmReviewer(api_key=llm_api_key, model=llm_model) if use_llm else None
+        self.llm = (
+            LlmReviewer(api_key=llm_api_key, model=llm_model,
+                        provider=llm_provider)
+            if use_llm else None
+        )
         self.radon = RadonRunner(min_grade=radon_min_grade) if use_radon else None
 
     # ------------------------------------------------------------------
